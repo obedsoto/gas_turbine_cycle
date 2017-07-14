@@ -870,9 +870,45 @@ class Regenerator(Unit):
 
 
 if __name__ == '__main__':
-    # ---------------------------------------------------------
-    # простейшая ГТУ с регенератором
-    # ---------------------------------------------------------
+
+    from optparse import OptionParser
+    import sys
+
+    usage = "Usage: turbine_lib [option]"
+
+    parser = OptionParser(usage=usage)
+
+    parser.add_option("-d", "--debug", action="store_true", dest="debug",
+                      help="debug mode on")
+
+    parser.add_option("--atmosphere-p0", action="store", type="float", dest="atmosphere_p0", help="Total pressure, default=100000", default=100000)
+    parser.add_option("--atmosphere-t0", action="store", type="float", dest="atmosphere_T0", help="Total temperature, default=288", default=288)
+    parser.add_option("--inlet-sigma", action="store", type="float", dest="inlet_sigma", help="Pressure ratio out/in, default=0.98", default=0.98)
+    parser.add_option("--comp-pi_c", action="store", type="float", dest="comp_pi_c", help="Pressure ratio, default=5", default=5)
+    parser.add_option("--comp-eta_stag_p", action="store", type="float", dest="comp_eta_stag_p", help="Polytropic efficiency, default=0.89", default=0.89)
+    parser.add_option("--comb_chamber-eta_burn", action="store", type="float", dest="comb_chamber_eta_burn", help="Combustion efficiency, default=0.98", default=0.98)
+    parser.add_option("--comb_chamber-Q_n", action="store", type="float", dest="comb_chamber_Q_n", help="Low Heating Value, default=43000000", default=43000000)
+    parser.add_option("--comb_chamber-T_stag_out", action="store", type="float", dest="comb_chamber_T_stag_out", help="Output total temperature, default=1600", default=1600)
+    parser.add_option("--turbine-eta_stag_p", action="store", type="float", dest="turbine_eta_stag_p", help="Polytropic efficiency, default=0.91", default=0.91)
+    parser.add_option("--turbine-p_stag_out", action="store", type="float", dest="turbine_p_stag_out", help="Output total pressure, default=170000", default=170000)
+    parser.add_option("--load-power", action="store", type="float", dest="load_power", help="Power demand, default=2300000", default=2300000)
+    parser.add_option("--outlet-sigma", action="store", type="float", dest="outlet_sigma", help="Pressure ratio out/in, default=0.99", default=0.99)
+    parser.add_option("--regenerator-T_stag_hot_in", action="store", type="float", dest="regenerator_T_stag_hot_in", help="Total temperature of gases at inlet, default=1100", default=1100)
+    parser.add_option("--regenerator-T_stag_hot_out", action="store", type="float", dest="regenerator_T_stag_hot_out", help="Total temperature of gases at outlet, default=900", default=900)
+
+    (options, args) = parser.parse_args()
+
+    # if no args or options are provided print help and exit
+    if len(args) != 0 or not any(options.__dict__.values()):
+        print("Provide at least one parameter, ie: " + "turbine_lib --atmosphere-t0=288")
+        parser.print_help()
+        sys.exit(1)
+
+    if options.debug:
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+    else:
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.ERROR)
+
     atmosphere = Atmosphere()
     inlet = Inlet()
     comp = Compressor(pi_c=5)
@@ -898,42 +934,29 @@ if __name__ == '__main__':
     turbine.p_stag_out = 170e3
     regenerator.T_stag_hot_in = 1100
     regenerator.T_stag_hot_out = 900
-    solver.solve()
-    print(load.G_air)
-    # ----------------------------------------------------------------
-    #  схема 2Н
-    # ----------------------------------------------------------------
-    # atmosphere = Atmosphere()
-    # inlet = Inlet()
-    # comp = Compressor(pi_c=15)
-    # combustion_chamber = CombustionChamber(Q_n=43e6, l0=14)
-    # comp_turbine = Turbine()
-    # zero_load1 = Load(power=0)
-    # zero_load2 = Load(power=0)
-    # power_turbine = Turbine()
-    # load = Load(power=2e6)
-    # outlet = Outlet()
-    # unit_arr = [atmosphere, inlet, comp, combustion_chamber, comp_turbine, zero_load1, power_turbine, zero_load2, load,
-    #             outlet]
-    # solver = NetworkSolver(unit_arr)
-    # solver.create_connection(atmosphere.gd_outlet_port, inlet.gd_inlet_port, ConnectionType.GasDynamic)
-    # solver.create_connection(inlet.gd_outlet_port, comp.gd_inlet_port, ConnectionType.GasDynamic)
-    # solver.create_connection(comp.gd_outlet_port, combustion_chamber.gd_inlet_port, ConnectionType.GasDynamic)
-    # solver.create_connection(combustion_chamber.gd_outlet_port, comp_turbine.gd_inlet_port, ConnectionType.GasDynamic)
-    # solver.create_connection(comp_turbine.gd_outlet_port, power_turbine.gd_inlet_port, ConnectionType.GasDynamic)
-    # solver.create_connection(power_turbine.gd_outlet_port, outlet.gd_inlet_port, ConnectionType.GasDynamic)
-    # solver.create_connection(outlet.gd_outlet_port, atmosphere.gd_inlet_port, ConnectionType.GasDynamic)
-    #
-    # solver.create_connection(comp_turbine.m_comp_outlet_port, comp.m_inlet_port, ConnectionType.Mechanical)
-    # solver.create_connection(comp_turbine.m_load_outlet_port, zero_load1.m_inlet_port, ConnectionType.Mechanical)
-    # solver.create_connection(power_turbine.m_comp_outlet_port, zero_load2.m_inlet_port, ConnectionType.Mechanical)
-    # solver.create_connection(power_turbine.m_load_outlet_port, load.m_inlet_port, ConnectionType.Mechanical)
-    #
-    # combustion_chamber.T_stag_out = 1450
-    # combustion_chamber.alpha_out = 2.5
-    # power_turbine.p_stag_out = 170e3
-    # solver.solve()
 
+    atmosphere.p0 = options.atmosphere_p0
+    atmosphere.T0 = options.atmosphere_T0
+    inlet.sigma = options.inlet_sigma
+    comp.pi_c = options.comp_pi_c
+    comp.eta_stag_p = options.comp_eta_stag_p
+    comb_chamber.eta_burn= options.comb_chamber_eta_burn
+    comb_chamber.Q_n = options.comb_chamber_Q_n
+    comb_chamber.T_stag_out = options.comb_chamber_T_stag_out
+    turbine.eta_stag_p = options.turbine_eta_stag_p
+    turbine.p_stag_out = options.turbine_p_stag_out
+    load.power = options.load_power
+    outlet.sigma = options.outlet_sigma
+    regenerator.T_stag_hot_in = options.regenerator_T_stag_hot_in
+    regenerator.T_stag_hot_out = options.regenerator_T_stag_hot_out
+
+    solver.solve()
+
+    print("load.G_air="+str(load.G_air))
+    print("comp.T_stag_out="+str(comp.T_stag_out))
+    print("comp.p_stag_out="+str(comp.p_stag_out))
+    print("turbine.T_stage_out="+str(turbine.T_stag_out))
+    print("turbine.p_stage_out="+str(turbine.p_stag_out))
 
 
 

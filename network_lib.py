@@ -5,7 +5,7 @@ import enum
 import typing
 import logging
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+#logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.ERROR)
 
 
 class ConnectionType(enum.Enum):
