@@ -899,7 +899,8 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     # if no args or options are provided print help and exit
-    if len(args) != 0 or not any(options.__dict__.values()):
+
+    if len(sys.argv) == 1 or not any(options.__dict__.values()):
         print("Provide at least one parameter, ie: " + "turbine_lib --atmosphere-t0=288")
         parser.print_help()
         sys.exit(1)
